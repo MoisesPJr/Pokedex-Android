@@ -8,6 +8,8 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
@@ -15,12 +17,17 @@ import com.bumptech.glide.load.engine.DiskCacheStrategy;
 import com.example.pokecarguero.R;
 import com.example.pokecarguero.SQLite.PokemonDao;
 import com.example.pokecarguero.SQLite.TipoDao;
+import com.example.pokecarguero.adapter.CaracteristicasAdapter;
 import com.example.pokecarguero.models.Caracteristicas;
+import com.example.pokecarguero.models.CaracteristicasPokemon;
+import com.example.pokecarguero.models.Movimentos;
+import com.example.pokecarguero.models.Pokemon;
 import com.example.pokecarguero.models.PokemonApiResposta;
 import com.example.pokecarguero.retrofit.PokeApiService;
 
 import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.List;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -31,6 +38,10 @@ import retrofit2.converter.gson.GsonConverterFactory;
 
 public class CaracteristicasActivity extends AppCompatActivity {
 
+
+    private RecyclerView recyclerView;
+    private CaracteristicasAdapter caracteristicasAdapter;
+
     Retrofit retrofit;
     private TipoDao tipoDao;
     private int id = 1;
@@ -39,6 +50,7 @@ public class CaracteristicasActivity extends AppCompatActivity {
     private TextView txtHp;
     private TextView txtTipo1;
     private TextView txtTipo2;
+    private TextView txtWeight;
     private TextView txtNomePokemon;
     private TextView txtAtaque;
     private TextView txtDefesa;
@@ -53,6 +65,7 @@ public class CaracteristicasActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_caracteristicas);
         configurarView();
+        configuraRecyclerView();
         retrofit = new Retrofit.Builder()
                 .baseUrl("https://pokeapi.co/api/v2/")
                 .addConverterFactory(GsonConverterFactory.create())
@@ -60,8 +73,8 @@ public class CaracteristicasActivity extends AppCompatActivity {
         tipoDao = new TipoDao(this);
         recuperarDados();
         configurarBotaoLikeEDislike();
-        obterCaracteristicas(id);
         configuraTipoPokemon();
+        obterCaracteristicas(id);
         clickFavorito(id);
         Glide.with(this).load("https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/" + id + ".png")
                 .centerCrop()
@@ -69,9 +82,17 @@ public class CaracteristicasActivity extends AppCompatActivity {
                 .diskCacheStrategy(DiskCacheStrategy.ALL)
                 .into(imgPokemon);
 
-
+        obterPeso(id);
     }
 
+    private void configuraRecyclerView() {
+        recyclerView = findViewById(R.id.recyclerStats);
+        caracteristicasAdapter = new CaracteristicasAdapter(this);
+        RecyclerView.LayoutManager layoutManager = new LinearLayoutManager(getApplicationContext());
+        recyclerView.setLayoutManager(layoutManager);
+        recyclerView.setHasFixedSize(true);
+        recyclerView.setAdapter(caracteristicasAdapter);
+    }
 
     private void configuraTipoPokemon() {
 
@@ -100,7 +121,7 @@ public class CaracteristicasActivity extends AppCompatActivity {
 
     private void configurarView() {
         txtHp = findViewById(R.id.txtHp);
-        txtAtaque = findViewById(R.id.txtAttack);
+        txtAtaque = findViewById(R.id.txtAtk);
         txtDefesa = findViewById(R.id.txtDef);
         txtSpecAtaque = findViewById(R.id.txtSpcAtk);
         txtSpecDef = findViewById(R.id.txtSpcDef);
@@ -110,6 +131,37 @@ public class CaracteristicasActivity extends AppCompatActivity {
         btnLike = findViewById(R.id.btnLike);
         txtTipo1 = findViewById(R.id.txtTipo1);
         txtTipo2 = findViewById(R.id.txtTipo2);
+        txtWeight = findViewById(R.id.txtWeight);
+    }
+
+    private void obterPeso(int id){
+
+        PokeApiService pokeApiService = retrofit.create(PokeApiService.class);
+
+
+        Call<PokemonApiResposta> pokemonRespostaLista = pokeApiService.getPokemon(id);
+
+
+        pokemonRespostaLista.enqueue(new Callback<PokemonApiResposta>() {
+            @Override
+            public void onResponse(Call<PokemonApiResposta> call, Response<PokemonApiResposta> response) {
+                if (response.isSuccessful()) {
+                    PokemonApiResposta pokemonApiResposta = response.body();
+                    int peso = pokemonApiResposta.getWeight();
+                    txtWeight.setText(String.valueOf(peso));
+                } else {
+                    Log.i("POKEMON", "Erro");
+                }
+
+            }
+
+            @Override
+            public void onFailure(Call<PokemonApiResposta> call, Throwable t) {
+                Log.i("POKEMON", t.getMessage());
+
+            }
+        });
+
     }
 
     private void obterCaracteristicas(int id) {
@@ -126,13 +178,56 @@ public class CaracteristicasActivity extends AppCompatActivity {
                     PokemonApiResposta pokemonApiResposta = response.body();
                     // ArrayList<Pokemon> listaPokemon = pokemonApiResposta.get();
                     ArrayList<Caracteristicas> listaCaracteristicas = pokemonApiResposta.getStats();
+                    List<CaracteristicasPokemon> caracteristicasPokemons = new ArrayList<>();
                     for (int i = 0; i < listaCaracteristicas.size(); i++) {
                         Caracteristicas p = listaCaracteristicas.get(i);
                         Log.i("POKEMON", p.getBase_stat() + "");
                         Log.i("POKEMON", p.getStat().getName() + "");
-
                         carregaView(p);
                     }
+                    obterMovimentos(id);
+                } else {
+                    Log.i("POKEMON", "Erro");
+                }
+
+            }
+
+            @Override
+            public void onFailure(Call<PokemonApiResposta> call, Throwable t) {
+                Log.i("POKEMON", t.getMessage());
+
+            }
+        });
+    }
+
+
+    private void obterMovimentos(int id) {
+        PokeApiService pokeApiService = retrofit.create(PokeApiService.class);
+
+
+        Call<PokemonApiResposta> pokemonRespostaLista = pokeApiService.getPokemon(id);
+
+
+        pokemonRespostaLista.enqueue(new Callback<PokemonApiResposta>() {
+            @Override
+            public void onResponse(Call<PokemonApiResposta> call, Response<PokemonApiResposta> response) {
+                if (response.isSuccessful()) {
+                    PokemonApiResposta pokemonApiResposta = response.body();
+                    ArrayList<CaracteristicasPokemon> caracteristicasPokemons= new ArrayList<>();
+                    ArrayList<Movimentos> listaCaracteristicas = pokemonApiResposta.getMoves();
+                    for (int i = 0; i < listaCaracteristicas.size(); i++) {
+                        Movimentos p = listaCaracteristicas.get(i);
+                        for (int j = 0; j < p.getVersion_group_details().size(); j++) {
+                            if (p.getVersion_group_details().get(j).getVersionGroup().getName().equals("red-blue") && p.getVersion_group_details().get(j).getLevel_learned_at() != 0 )  {
+                                 CaracteristicasPokemon cp = new CaracteristicasPokemon();
+                                 cp.setName(p.getMove().getName());
+                                 cp.setValor(String.valueOf(p.getVersion_group_details().get(j).getLevel_learned_at()));
+                                 caracteristicasPokemons.add(cp);
+                            }
+                        }
+                    }
+
+                    caracteristicasAdapter.addListPokemon(caracteristicasPokemons);
                 } else {
                     Log.i("POKEMON", "Erro");
                 }

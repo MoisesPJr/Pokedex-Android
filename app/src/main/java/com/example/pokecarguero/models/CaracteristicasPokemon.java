@@ -1,8 +1,9 @@
 package com.example.pokecarguero.models;
 
-public class Type {
+public class CaracteristicasPokemon {
 
     private String name;
+    private String valor;
 
     public String getName() {
         return name;
@@ -10,5 +11,13 @@ public class Type {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public String getValor() {
+        return valor;
+    }
+
+    public void setValor(String valor) {
+        this.valor = valor;
     }
 }

@@ -1,6 +1,8 @@
 package com.example.pokecarguero.models;
 
-public class Pokemon {
+import java.io.Serializable;
+
+public class Pokemon implements Serializable{
 
     private int id;
     private String name;
@@ -40,4 +42,5 @@ public class Pokemon {
     public void setStatus(int status) {
         this.status = status;
     }
+
 }

@@ -36,4 +36,27 @@ public class DialogUtil {
         void onCancelado();
     }
 
+
+    public static void visualizarUmaLista(final Context context, final String titulo, List<? extends Object> itens, final OnRetornoEscolha onRetornoEscolha) {
+        String[] stringArray = ListaUtil.toStringArray(itens);
+        if (stringArray == null) return;
+        AlertDialog.Builder dialogBuilder = new AlertDialog.Builder(context);
+        dialogBuilder.setTitle(titulo);
+        dialogBuilder.setItems(stringArray, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                onRetornoEscolha.onSucesso(which);
+            }
+        });
+
+        dialogBuilder.setNegativeButton("Cancelar", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                onRetornoEscolha.onCancelado();
+            }
+        });
+        dialogBuilder.show();
+
+    }
+
 }

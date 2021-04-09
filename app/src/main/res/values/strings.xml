@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">PokeCarguero</string>
+    <string name="menu_filtro">Filtrar</string>
+    <string name="menu_favorito">Favorito</string>
+    <string name="menu_tipo">Tipo</string>
+    <string name="menu_identificador">Identificador</string>
+</resources>
